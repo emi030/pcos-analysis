@@ -1,8 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 
-# Load the dataset
+# ── Load Data ──
 df = pd.read_csv('pcos_data.csv')
 
 # Preview the first 5 rows
@@ -17,10 +20,8 @@ print(df.describe())
 # Check all column names
 print(df.columns.tolist())
 
-# Drop unnecessary columns
+# ── Clean Data ──
 df = df.drop(columns=['Unnamed: 44', 'Sl. No', 'Patient File No.'])
-
-# Fix data types
 df['AMH(ng/mL)'] = pd.to_numeric(df['AMH(ng/mL)'], errors='coerce')
 df['Fast food (Y/N)'] = df['Fast food (Y/N)'].fillna(0)
 
@@ -31,7 +32,7 @@ print(f"PCOS rate: {df['PCOS (Y/N)'].mean():.2%}")
 # Check for missing values
 print(df.isnull().sum())
 
-# ── Plot 1: Symptom comparison ──
+# ── Plot 1: Symptom Comparison ──
 symptoms = ['Weight gain(Y/N)', 'hair growth(Y/N)',
             'Skin darkening (Y/N)', 'Hair loss(Y/N)', 'Pimples(Y/N)']
 
@@ -52,7 +53,7 @@ plt.tight_layout()
 plt.savefig('symptoms_comparison.png')
 print("Symptoms plot saved!")
 
-# ── Plot 2: Hormone analysis (cleaned) ──
+# ── Plot 2: Hormone Analysis ──
 df_clean = df[
     (df['FSH(mIU/mL)'] < 50) &
     (df['LH(mIU/mL)'] < 50) &
@@ -73,26 +74,19 @@ plt.tight_layout()
 plt.savefig('hormone_analysis_clean.png')
 print("Hormone plot saved!")
 
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
-
-# Select features
-features = ['BMI', 'FSH(mIU/mL)', 'LH(mIU/mL)', 
+# ── Machine Learning Model ──
+features = ['BMI', 'FSH(mIU/mL)', 'LH(mIU/mL)',
             'AMH(ng/mL)', 'Follicle No. (L)', 'Follicle No. (R)',
             'Weight gain(Y/N)', 'hair growth(Y/N)', 'Pimples(Y/N)']
 
 X = df[features].dropna()
 y = df.loc[X.index, 'PCOS (Y/N)']
 
-# Split data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train model
 model = LogisticRegression(max_iter=1000)
 model.fit(X_train, y_train)
 
-# Evaluate
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 print(f"Model Accuracy: {accuracy:.2%}")
