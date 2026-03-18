@@ -6,6 +6,8 @@ from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 # ── Load Data ──
 df = pd.read_csv('pcos_data.csv')
@@ -130,3 +132,30 @@ plt.legend()
 plt.tight_layout()
 plt.savefig('pvalue_plot.png')
 print("P-value plot saved!")
+
+# ── Plot 4: PCA Analysis ──
+pca_features = ['BMI', 'FSH(mIU/mL)', 'LH(mIU/mL)',
+                'AMH(ng/mL)', 'Follicle No. (L)', 'Follicle No. (R)']
+
+X_pca = df[pca_features].dropna()
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X_pca)
+
+pca = PCA(n_components=2)
+X_pca_result = pca.fit_transform(X_scaled)
+
+plt.figure(figsize=(8, 6))
+colors = df.loc[X_pca.index, 'PCOS (Y/N)'].map({0: 'blue', 1: 'red'})
+plt.scatter(X_pca_result[:, 0], X_pca_result[:, 1], c=colors, alpha=0.6)
+plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)')
+plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.1%} variance)')
+plt.title('PCA of PCOS Clinical Features')
+plt.legend(handles=[
+    plt.scatter([], [], color='blue', label='No PCOS'),
+    plt.scatter([], [], color='red', label='PCOS')
+], labels=['No PCOS', 'PCOS'])
+plt.tight_layout()
+plt.savefig('pca_plot.png')
+print(f"PCA plot saved!")
+print(f"Total variance explained: {sum(pca.explained_variance_ratio_):.1%}")
