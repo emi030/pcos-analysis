@@ -12,7 +12,7 @@ Exploratory data analysis, statistical testing, and machine learning prediction 
 
 ### Key Findings
 - Weight gain, hair growth, and skin darkening are 3-4x more common in PCOS patients (p < 0.0001)
-- AMH levels are significantly higher in PCOS patients — a key clinical marker (p = 0.0001)
+- AMH levels are significantly higher in PCOS patients, this is a key clinical marker (p = 0.0001)
 - BMI is significantly elevated in PCOS patients (p = 0.0002)
 - LH was the only non-significant hormone marker (p = 0.623), raising questions about its reliability across populations
 - PCA of clinical features explains 49.1% of variance, with visible separation between PCOS and non-PCOS patients along PC1
