@@ -1,23 +1,17 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
 # ── Load Data ──
 df = pd.read_csv('pcos_data.csv')
-
-# Preview the first 5 rows
 print(df.head())
-
-# Check the shape
 print(df.shape)
-
-# Basic statistics
 print(df.describe())
-
-# Check all column names
 print(df.columns.tolist())
 
 # ── Clean Data ──
@@ -25,11 +19,8 @@ df = df.drop(columns=['Unnamed: 44', 'Sl. No', 'Patient File No.'])
 df['AMH(ng/mL)'] = pd.to_numeric(df['AMH(ng/mL)'], errors='coerce')
 df['Fast food (Y/N)'] = df['Fast food (Y/N)'].fillna(0)
 
-# Check PCOS distribution
 print(df['PCOS (Y/N)'].value_counts())
 print(f"PCOS rate: {df['PCOS (Y/N)'].mean():.2%}")
-
-# Check for missing values
 print(df.isnull().sum())
 
 # ── Plot 1: Symptom Comparison ──
@@ -90,3 +81,52 @@ model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 print(f"Model Accuracy: {accuracy:.2%}")
+
+# ── Statistical Tests ──
+hormones_test = ['FSH(mIU/mL)', 'LH(mIU/mL)', 'AMH(ng/mL)', 'BMI']
+symptoms_test = ['Weight gain(Y/N)', 'hair growth(Y/N)',
+                 'Skin darkening (Y/N)', 'Hair loss(Y/N)', 'Pimples(Y/N)']
+
+print("\n=== Hormone Tests ===")
+for hormone in hormones_test:
+    group1 = df_clean[df_clean['PCOS (Y/N)'] == 1][hormone].dropna()
+    group2 = df_clean[df_clean['PCOS (Y/N)'] == 0][hormone].dropna()
+    t_stat, p_value = stats.ttest_ind(group1, group2)
+    significance = "SIGNIFICANT" if p_value < 0.05 else "not significant"
+    print(f"{hormone}: p-value = {p_value:.4f} → {significance}")
+
+print("\n=== Symptom Tests ===")
+for symptom in symptoms_test:
+    group1 = df[df['PCOS (Y/N)'] == 1][symptom].dropna()
+    group2 = df[df['PCOS (Y/N)'] == 0][symptom].dropna()
+    t_stat, p_value = stats.ttest_ind(group1, group2)
+    significance = "SIGNIFICANT" if p_value < 0.05 else "not significant"
+    print(f"{symptom}: p-value = {p_value:.4f} → {significance}")
+
+# ── Plot 3: P-value Visualization ──
+results = []
+
+for hormone in hormones_test:
+    group1 = df_clean[df_clean['PCOS (Y/N)'] == 1][hormone].dropna()
+    group2 = df_clean[df_clean['PCOS (Y/N)'] == 0][hormone].dropna()
+    t_stat, p_value = stats.ttest_ind(group1, group2)
+    results.append({'Feature': hormone, 'p-value': p_value, 'Type': 'Hormone'})
+
+for symptom in symptoms_test:
+    group1 = df[df['PCOS (Y/N)'] == 1][symptom].dropna()
+    group2 = df[df['PCOS (Y/N)'] == 0][symptom].dropna()
+    t_stat, p_value = stats.ttest_ind(group1, group2)
+    results.append({'Feature': symptom, 'p-value': p_value, 'Type': 'Symptom'})
+
+results_df = pd.DataFrame(results)
+
+plt.figure(figsize=(12, 6))
+colors = ['red' if p < 0.05 else 'gray' for p in results_df['p-value']]
+plt.barh(results_df['Feature'], -np.log10(results_df['p-value']), color=colors)
+plt.axvline(x=-np.log10(0.05), color='black', linestyle='--', label='p = 0.05')
+plt.xlabel('-log10(p-value)')
+plt.title('Statistical Significance of PCOS Features')
+plt.legend()
+plt.tight_layout()
+plt.savefig('pvalue_plot.png')
+print("P-value plot saved!")
